@@ -50,7 +50,7 @@ type MPEG2AudioConfig struct {
 
 // Decode decodes an MPEG_2 Audio Configuration
 func (c *MPEG2AudioConfig) Decode(bytes []byte) error {
-	if (bytes[0] == 0xFF) && ((bytes[1] & 0xF) == 0xF0) {
+	if (bytes[0] == 0xFF) && ((bytes[1] & 0xF0) == 0xF0) {
 		c.Header.Id = (uint(bytes[1] & 0x08)) >> 3
 		c.Header.Layer = (uint(bytes[1] & 0x06)) >> 1
 		c.Header.ProtectionAbsent = uint(bytes[1] & 0x01)
