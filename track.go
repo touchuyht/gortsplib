@@ -231,39 +231,88 @@ func (t *Track) ExtractDataH264() ([]byte, []byte, error) {
 
 // NewTrackAAC initializes an AAC track from a configuration.
 func NewTrackAAC(payloadType uint8, config []byte) (*Track, error) {
-	var conf rtpaac.MPEG4AudioConfig
-	err := conf.Decode(config)
+	var (
+		mpegStandard uint8
+		mpeg4Conf    rtpaac.MPEG4AudioConfig
+		mpeg2Conf    rtpaac.MPEG2AudioConfig
+	)
+
+	err := mpeg4Conf.Decode(config)
 	if err != nil {
-		return nil, fmt.Errorf("invalid MPEG-4 Audio config: %v", err)
+		err := mpeg2Conf.Decode(config)
+		if err != nil {
+			return nil, fmt.Errorf("unsupported audio track")
+		}
+		mpegStandard = 2
+	} else {
+		mpegStandard = 4
 	}
 
 	typ := strconv.FormatInt(int64(payloadType), 10)
 
-	return &Track{
-		Media: &psdp.MediaDescription{
-			MediaName: psdp.MediaName{
-				Media:   "audio",
-				Protos:  []string{"RTP", "AVP"},
-				Formats: []string{typ},
-			},
-			Attributes: []psdp.Attribute{
-				{
-					Key: "rtpmap",
-					Value: typ + " mpeg4-generic/" + strconv.FormatInt(int64(conf.SampleRate), 10) +
-						"/" + strconv.FormatInt(int64(conf.ChannelCount), 10),
+	switch mpegStandard {
+	case 2:
+		var tempConfig uint16 = 0
+		tempConfig = uint16(mpeg2Conf.Header.Profile + 1)
+		tempConfig <<= 5
+		tempConfig |= uint16(mpeg2Conf.Header.SamplingFreIndex)
+		tempConfig <<= 4
+		tempConfig |= uint16(mpeg2Conf.Header.ChannelCfg)
+		tempConfig <<= 3
+		return &Track{
+			Media: &psdp.MediaDescription{
+				MediaName: psdp.MediaName{
+					Media:   "audio",
+					Protos:  []string{"RTP", "AVP"},
+					Formats: []string{typ},
 				},
-				{
-					Key: "fmtp",
-					Value: typ + " profile-level-id=1; " +
-						"mode=AAC-hbr; " +
-						"sizelength=13; " +
-						"indexlength=3; " +
-						"indexdeltalength=3; " +
-						"config=" + hex.EncodeToString(config),
+				Attributes: []psdp.Attribute{
+					{
+						Key: "rtpmap",
+						Value: typ + " mpeg4-generic/" + strconv.FormatInt(int64(mpeg2Conf.Header.SamplingFreIndex), 10) +
+							"/" + strconv.FormatInt(int64(mpeg2Conf.Header.ChannelCfg), 10),
+					},
+					{
+						Key: "fmtp",
+						Value: typ + " streamtype=5;profile-level-id=1; " +
+							"mode=AAC-hbr; " +
+							"sizelength=13; " +
+							"indexlength=3; " +
+							"indexdeltalength=3; " +
+							"config=" + fmt.Sprintln("%x", tempConfig),
+					},
 				},
 			},
-		},
-	}, nil
+		}, nil
+	case 4:
+		return &Track{
+			Media: &psdp.MediaDescription{
+				MediaName: psdp.MediaName{
+					Media:   "audio",
+					Protos:  []string{"RTP", "AVP"},
+					Formats: []string{typ},
+				},
+				Attributes: []psdp.Attribute{
+					{
+						Key: "rtpmap",
+						Value: typ + " mpeg4-generic/" + strconv.FormatInt(int64(mpeg4Conf.SampleRate), 10) +
+							"/" + strconv.FormatInt(int64(mpeg4Conf.ChannelCount), 10),
+					},
+					{
+						Key: "fmtp",
+						Value: typ + " profile-level-id=1; " +
+							"mode=AAC-hbr; " +
+							"sizelength=13; " +
+							"indexlength=3; " +
+							"indexdeltalength=3; " +
+							"config=" + hex.EncodeToString(config),
+					},
+				},
+			},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unsupported audio track")
 }
 
 // IsAAC checks whether the track is an AAC track.
