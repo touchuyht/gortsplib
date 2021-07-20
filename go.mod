@@ -12,4 +12,4 @@ require (
 	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b
 )
 
-replace github.com/aler9/gortsplib v0.0.0-20210704172859-91ee859c9bf6 => github.com/touchuyht/gortsplib v0.0.1
+replace github.com/aler9/gortsplib v0.0.0-20210704172859-91ee859c9bf6 => ./
