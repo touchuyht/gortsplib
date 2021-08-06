@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// connect to the server and start reading all tracks
-	conn, err := gortsplib.DialRead("rtsps://touchuyht.com:8554/mystream")
+	conn, err := gortsplib.DialRead("rtsp://touchuyht.com:8554/mystream")
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +53,7 @@ func main() {
 				fmt.Printf("received Aac NALU of size %d\n", len(nalu))
 			}
 
-			_ , err = enc.Encode(nalus, 2 * time.Millisecond)
+			_, err = enc.Encode(nalus, 2*time.Millisecond)
 			if err != nil {
 				fmt.Println(err)
 			}

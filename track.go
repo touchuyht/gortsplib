@@ -279,7 +279,7 @@ func NewTrackAAC(payloadType uint8, config []byte) (*Track, error) {
 							"sizelength=13; " +
 							"indexlength=3; " +
 							"indexdeltalength=3; " +
-							"config=" + fmt.Sprintln("%x", tempConfig),
+							"config=" + fmt.Sprintf("%x", tempConfig),
 					},
 				},
 			},
